@@ -200,7 +200,11 @@ AGENT_CATALOG: list[Agent] = [
             "schema: folder structure, modules, REST endpoints, authentication, "
             "validation, error handling, integrations, and representative code. "
             "Follow clean architecture, enterprise conventions, and the preferred "
-            "stack. If revision feedback is present, address it explicitly."
+            "stack. If revision feedback is present, address it explicitly. "
+            "IMPORTANT: the code_snippets field must contain real, complete "
+            "source files ({file, language, content}) — the application entry "
+            "point and the core service modules — never an empty list and never "
+            "prose."
         ),
         input_schema=EngineerInput,
         output_schema=BackendOutput,
@@ -218,7 +222,11 @@ AGENT_CATALOG: list[Agent] = [
             "Design the user-facing application from the architecture and product "
             "brief: page map, component library, user flows, state management, "
             "and typed data layer. Prefer the declared frontend stack. If revision "
-            "feedback is present, address it explicitly."
+            "feedback is present, address it explicitly. "
+            "IMPORTANT: the code_snippets field must contain real, complete "
+            "source files ({file, language, content}) — the application entry "
+            "point, the main pages, and the typed API client — never an empty "
+            "list and never prose."
         ),
         input_schema=EngineerInput,
         output_schema=FrontendOutput,

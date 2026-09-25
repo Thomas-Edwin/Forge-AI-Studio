@@ -141,7 +141,7 @@ class ArchitectureOutput(BaseModel):
 class CodeSnippet(BaseModel):
     file: str
     language: str
-    content: str
+    content: str = Field(min_length=1)
 
 
 class BackendOutput(BaseModel):
@@ -155,7 +155,10 @@ class BackendOutput(BaseModel):
     error_handling: list[str] = Field(default_factory=list)
     integrations: list[str] = Field(default_factory=list)
     dependencies: list[str] = Field(default_factory=list)
-    code_snippets: list[CodeSnippet] = Field(default_factory=list)
+    # The Code section renders these files; a non-empty list guarantees the
+    # pipeline always produces real source for the Backend tab (the LLM path
+    # falls back to the deterministic engine when the model omits them).
+    code_snippets: list[CodeSnippet] = Field(min_length=1)
     markdown: str
 
 
@@ -168,6 +171,9 @@ class FrontendOutput(BaseModel):
     api_integration: list[str] = Field(default_factory=list)
     accessibility: list[str] = Field(default_factory=list)
     data_layer: list[str] = Field(default_factory=list)
+    # Same contract as the Backend engineer so the existing Code section
+    # renders the Frontend tab's generated files too.
+    code_snippets: list[CodeSnippet] = Field(min_length=1)
     markdown: str
 
 

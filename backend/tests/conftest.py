@@ -10,19 +10,61 @@ every platform.
 
 import asyncio
 import logging
+import warnings
 from pathlib import Path
 
-import app.models  # noqa: F401 - registers all models on Base.metadata
 import pytest
-from app.config.settings import Settings
-from app.database.base import Base
-from app.database.session import configure_engine, get_engine
-from app.main import create_app
-from fastapi.testclient import TestClient
+
+# --- Known-benign warning suppressions (deliberately narrow) ------------------
+#
+# 1) langchain-core serializer deprecation, raised by langgraph's own module
+#    imports. These fire while conftest imports the app modules below — the
+#    only time, because Python caches modules in sys.modules. The nested
+#    `catch_warnings` block makes this ignore filter innermost during that
+#    import, which beats every outer filter (including `-W error` from
+#    addopts, which otherwise raises here before any marker/ini filter could
+#    apply).
+#    NB: match the EXACT emitted class. langchain passes a
+#    LangChainPendingDeprecationWarning *instance* to warnings.warn(), and
+#    CPython matches filters against the instance's class — a SIBLING of
+#    LangChainDeprecationWarning (they derive from PendingDeprecationWarning
+#    and DeprecationWarning respectively), so a LangChainDeprecationWarning
+#    filter never matches. No message regex is used on purpose: CPython
+#    lowercases warning text before regex matching.
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=LangChainPendingDeprecationWarning)
+
+    import app.models  # noqa: F401, E402 - registers all models on Base.metadata
+    from app.config.settings import Settings  # noqa: E402
+    from app.database.base import Base  # noqa: E402
+    from app.database.session import configure_engine, get_engine  # noqa: E402
+    from app.main import create_app  # noqa: E402
+    from fastapi.testclient import TestClient  # noqa: E402
 
 # aiosqlite logs every statement at DEBUG when the process logger is verbose;
 # keep test output readable regardless of the developer's .env log level.
 logging.getLogger("aiosqlite").setLevel(logging.WARNING)
+
+# 2) aiosqlite worker threads can outlive the event loop that spawned them when
+#    a test finishes; delivering the final future then raises
+#    RuntimeError("Event loop is closed") inside the thread after the test has
+#    already passed. Attached as a `filterwarnings` marker to every test —
+#    markers are applied after CLI `-W` filters and therefore keep `-W error`
+#    runs green — and it wraps the whole runtest protocol including teardown.
+#    Any OTHER unhandled thread exception still fails the run.
+_AIOSQLITE_CLOSED_LOOP_IGNORE = (
+    "ignore:Exception in thread[\\s\\S]*Event loop is closed[\\s\\S]*aiosqlite"
+    ":pytest.PytestUnhandledThreadExceptionWarning"
+)
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Attach the known-benign aiosqlite filter to every test."""
+    marker = pytest.mark.filterwarnings(_AIOSQLITE_CLOSED_LOOP_IGNORE)
+    for item in items:
+        item.add_marker(marker)
 
 
 def _test_settings(db_path: Path) -> Settings:

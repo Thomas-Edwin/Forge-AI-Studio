@@ -32,8 +32,29 @@ ignore = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
 asyncio_mode = "auto"
+# Gate: warnings are errors. Known-benign suppressions live in
+# tests/conftest.py — an inner `catch_warnings` block around the app-module
+# imports (langchain-core noise, raised at conftest import before any marker
+# exists) and a per-test `filterwarnings` marker (aiosqlite teardown; markers
+# are the only filter class that outranks this `-W error` flag). The ini entry
+# below is belt-and-braces for the same import-time warning: it is scoped to
+# the exact emitted class, so it cannot mask anything else.
+addopts = "-q -W error"
+filterwarnings = [
+    # langchain-core serializer deprecation, emitted by langgraph's own module
+    # imports at conftest-import time (fires once, before per-test markers
+    # exist — hence an ini entry, not a marker).
+    # NB: match the EXACT emitted class. langchain passes a
+    # LangChainPendingDeprecationWarning *instance* to warnings.warn(), and
+    # CPython then matches filters against the instance's class — which is a
+    # SIBLING of LangChainDeprecationWarning (they derive from
+    # PendingDeprecationWarning and DeprecationWarning respectively), so a
+    # LangChainDeprecationWarning filter never matches. This entry sits below
+    # the CLI `-W error` in phases where both apply, i.e. it only ever
+    # suppresses this one known-benign warning, never a real one.
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning",
+]
 
 [tool.mypy]
 python_version = "3.12"

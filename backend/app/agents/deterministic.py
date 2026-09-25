@@ -675,6 +675,98 @@ def run_backend(ctx: dict) -> dict:
     }
 
 
+def _frontend_snippets(product: dict, tech: dict) -> list[dict]:
+    """Real frontend source files derived from the product brief and stack.
+
+    Follows the same contract as `run_backend`'s `code_snippets` (file /
+    language / content) so the existing Code section renders them: a typed API
+    client for the derived endpoint contract and an application entry page
+    consuming it.
+    """
+    features = product.get("features") or []
+    entities = _entities(features)
+    primary = entities[0].lower() if entities else "item"
+    framework = tech["framework"]
+    app_path = "frontend/src/app/page.tsx" if "Next" in framework else "frontend/src/App.tsx"
+
+    api_client = (
+        "// frontend/src/lib/api.ts\n"
+        "// Typed API client for the backend contract (GET/POST /api/v1/"
+        + primary
+        + "s).\n"
+        'const API_BASE = "/api/v1";\n'
+        "\n"
+        "export class ApiError extends Error {}\n"
+        "\n"
+        "async function request<T>(path: string, init?: RequestInit): Promise<T> {\n"
+        "  const response = await fetch(`${API_BASE}${path}`, {\n"
+        "    ...init,\n"
+        '    headers: { "Content-Type": "application/json", ...init?.headers },\n'
+        "  });\n"
+        "  if (!response.ok) {\n"
+        "    throw new ApiError(`Request failed: ${response.status} ${response.statusText}`);\n"
+        "  }\n"
+        "  return response.json() as Promise<T>;\n"
+        "}\n"
+        "\n"
+        "export const api = {\n"
+        "  list: <T = unknown>() => request<T>(`/"
+        + primary
+        + "s`),\n"
+        "  create: (payload: unknown) =>\n"
+        '    request(`/' + primary + 's`, { method: "POST", body: JSON.stringify(payload) }),\n'
+        "};\n"
+    )
+
+    app_entry = (
+        "// "
+        + app_path
+        + "\n"
+        '"use client";\n'
+        "\n"
+        'import { useEffect, useState } from "react";\n'
+        'import { api } from "@/lib/api";\n'
+        "\n"
+        "interface Record {\n"
+        "  id: string;\n"
+        "  name: string;\n"
+        "}\n"
+        "\n"
+        "export default function HomePage() {\n"
+        "  const [items, setItems] = useState<Record[]>([]);\n"
+        "  const [error, setError] = useState<string | null>(null);\n"
+        "\n"
+        "  useEffect(() => {\n"
+        "    api\n"
+        "      .list<Record[]>()\n"
+        "      .then(setItems)\n"
+        "      .catch((err: unknown) =>\n"
+        "        setError(err instanceof Error ? err.message : 'Failed to load data'),\n"
+        "      );\n"
+        "  }, []);\n"
+        "\n"
+        "  return (\n"
+        "    <main className=\"mx-auto max-w-5xl px-4 py-10\">\n"
+        "      <h1 className=\"text-2xl font-semibold\">Overview</h1>\n"
+        "      {error ? <p className=\"text-red-600\">{error}</p> : null}\n"
+        "      <ul>\n"
+        "        {items.map((item) => (\n"
+        "          <li key={item.id} className=\"border-b py-2\">\n"
+        "            {item.name}\n"
+        "          </li>\n"
+        "        ))}\n"
+        "      </ul>\n"
+        "    </main>\n"
+        "  );\n"
+        "}\n"
+    )
+
+    return [
+        {"file": app_path, "language": "tsx", "content": app_entry},
+        {"file": "frontend/src/lib/api.ts", "language": "typescript", "content": api_client},
+    ]
+
+
 def run_frontend(ctx: dict) -> dict:
     """Derive a stack-aware frontend design from the product brief."""
     product = ctx.get("product_requirements") or {}
@@ -768,6 +860,7 @@ def run_frontend(ctx: dict) -> dict:
         "api_integration": api_integration,
         "accessibility": accessibility,
         "data_layer": data_layer,
+        "code_snippets": _frontend_snippets(product, tech),
         "markdown": "\n".join(md).rstrip(),
     }
 
