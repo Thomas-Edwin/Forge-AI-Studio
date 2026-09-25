@@ -1,128 +1,128 @@
 # ForgeAI Studio
 
-Enterprise multi-agent software engineering platform — transforms plain-English
-business requirements into production-ready applications through a governed
-pipeline of ten specialized AI agents.
+ForgeAI Studio is an autonomous multi-agent software engineering platform designed to transform software ideas into structured, production-ready project architectures and implementations.
 
-**Phase 3.1 — Project Foundation.** This repository contains the initialized
-frontend, backend, Docker topology, and engineering tooling. Feature phases
-(auth, database models, agent orchestration, UI) follow per the finalized
-design documents in `docs/`.
+The platform uses specialized AI agents to coordinate different stages of software development, including requirements analysis, architecture design, database design, backend development, frontend development, testing, security, DevOps, documentation, and final review.
+
+## Overview
+
+Traditional software development requires developers to manually coordinate multiple stages of the development lifecycle.
+
+ForgeAI Studio introduces a multi-agent workflow where specialized AI agents collaborate on different engineering tasks.
+
+A typical project moves through the following pipeline:
+
+Idea
+→ Project Management
+→ System Architecture
+→ Database Design
+→ Backend Development
+→ Frontend Development
+→ Quality Assurance
+→ Security Review
+→ DevOps
+→ Documentation
+→ Final Review
+
+## Key Features
+
+- AI-powered software project generation
+- Multi-agent software engineering pipeline
+- Automated project architecture planning
+- Database schema generation
+- Backend development assistance
+- Frontend development assistance
+- Automated testing and quality analysis
+- Security analysis
+- DevOps and deployment planning
+- Technical documentation generation
+- Final project review
+- Project workspace management
+- Agent execution tracking
+- Architecture visualization
+- Documentation workspace
+- Deployment workflow management
+
+## AI Agent Pipeline
+
+ForgeAI Studio uses specialized agents for different stages of the software engineering lifecycle.
+
+### 1. Project Manager
+
+Analyzes the project idea and converts it into structured requirements, tasks, milestones, and development objectives.
+
+### 2. System Architect
+
+Designs the overall system architecture, technology stack, services, APIs, and component relationships.
+
+### 3. Database Architect
+
+Designs database schemas, relationships, indexes, constraints, and data models.
+
+### 4. Backend Engineer
+
+Generates backend architecture, APIs, services, authentication, business logic, and supporting infrastructure.
+
+### 5. Frontend Engineer
+
+Designs frontend structure, UI components, pages, state management, and user experience flows.
+
+### 6. QA Engineer
+
+Analyzes the generated system and creates test strategies, test cases, and quality checks.
+
+### 7. Security Engineer
+
+Reviews the project for authentication, authorization, data protection, API security, and common application vulnerabilities.
+
+### 8. DevOps Engineer
+
+Creates deployment strategies, infrastructure configuration, CI/CD workflows, containerization plans, and environment configuration.
+
+### 9. Technical Writer
+
+Generates technical documentation, API documentation, setup instructions, and project documentation.
+
+### 10. Reviewer
+
+Performs a final review of the project output and identifies inconsistencies, missing requirements, architectural issues, and potential improvements.
 
 ## Architecture
 
-| Layer | Stack | Reference |
-|---|---|---|
-| Frontend | Next.js 15 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · TanStack Query · Zod · React Hook Form · Framer Motion · Lucide | `docs/FAD.md` |
-| Backend | FastAPI · SQLAlchemy · Alembic · PostgreSQL · Redis · LangGraph · LangChain · ChromaDB · Loguru · Pydantic | `docs/BAD.md`, `docs/MAD.md` |
-| Deployment | Docker · Docker Compose (Vercel / Render in production) | `docs/DAD.md` |
-
-## Prerequisites
-
-- Node.js ≥ 20 and npm ≥ 10
-- Python ≥ 3.12
-- Docker with Compose v2 (for the full stack)
-- Git Bash or a POSIX shell on Windows
-
-## Quickstart
-
-```bash
-# 1. Install backend (virtualenv) and frontend dependencies
-npm run setup
-
-# 2. Start everything (Postgres + Redis via Docker, API, web)
-npm run dev
-
-# API docs: http://localhost:8000/api/v1/docs
-# Web:      http://localhost:3000
-```
-
-> **Recreating the backend venv manually?** `npm run setup` installs
-> `backend/requirements-dev.txt`, which pulls in the runtime requirements
-> **plus the dev/test toolchain** (`pytest`, `ruff`, `mypy`). If you create
-> `backend/.venv` yourself, install the dev file — not just
-> `requirements.txt` — or `npm run test` fails with "No module named pytest"
-> (and ruff/mypy are missing too):
->
-> ```bash
-> backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt   # Windows
-> backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt           # macOS/Linux
-> ```
-
-### Individual services
-
-```bash
-npm run dev:api    # backend only (uvicorn --reload on :8000)
-npm run dev:web    # frontend only (next dev on :3000)
-docker compose -f docker/docker-compose.yml up -d postgres redis
-```
-
-On Windows (no POSIX shell required — plain `cmd` under the hood):
-
-```bash
-npm run dev:windows        # both servers in separate windows
-npm run dev:api:windows    # backend via backend\.venv\Scripts\python.exe
-npm run dev:web:windows    # frontend
-```
-
-### Health check
-
-```bash
-npm run health          # curl /api/v1/health
-# -> {"status":"healthy","service":"ForgeAI Studio","version":"1.0.0"}
-```
-
-### Validation
-
-```bash
-npm run test            # backend pytest + ruff, frontend eslint + typecheck
-npm run format          # frontend prettier
-```
-
-## Repository structure
-
-```
-forgeai-studio/
-├── frontend/            # Next.js 15 application (app router, components,
-│                        #   features, hooks, lib, providers, services,
-│                        #   styles, types, public)
-├── backend/             # FastAPI service (app: api, core, config, database,
-│                        #   models, schemas, services, agents, memory, tools;
-│                        #   alembic/, tests/)
-├── docker/              # Dockerfiles, compose topology, env template
-├── scripts/             # setup / dev / test / health helpers
-├── docs/                # finalized design documents index
-└── package.json         # monorepo orchestration
-```
-
-## Configuration
-
-- **Backend:** `backend/.env.example` → `.env`; consumed by the shared
-  configuration module `backend/app/config/settings.py` (single source of
-  truth for the API and all workers).
-- **Frontend:** `frontend/.env.example` → `.env.local`; validated with Zod in
-  `frontend/lib/config/env.ts`. Empty `NEXT_PUBLIC_API_URL` enables the
-  same-origin proxy (`next.config.ts` rewrites) for containerized runs.
-- **Docker:** `docker/.env.example` → `docker/.env`.
-
-## Error & logging conventions
-
-- Every non-2xx response uses the standard envelope
-  `{"error": {"code", "message", "details?", "request_id", "path", "ts"}}`
-  (`backend/app/core/errors.py`), mirrored by the typed client
-  (`frontend/services/http-client.ts`).
-- Structured loguru logging with correlation ids and secret redaction
-  (`backend/app/core/logging.py`); `X-Request-Id` is propagated end-to-end.
-
-## Phase status
-
-| Phase | Scope | Status |
-|---|---|---|
-| 3.1 | Project foundation (this baseline) | Complete |
-| 3.2 | Authentication & user management (JWT, sessions, RBAC, auth UI) | Complete |
-| 3.3+ | Database models, agent orchestration, features | Planned |
-
-## License
-
-Proprietary — internal use only.
-"# Forge-AI-Studio" 
+```text
+                         ForgeAI Studio
+                               |
+                               v
+                    Project Requirements
+                               |
+                               v
+                    Project Manager Agent
+                               |
+              +----------------+----------------+
+              |                |                |
+              v                v                v
+        Architecture       Database          Planning
+           Agent             Agent             Agent
+              |                |                |
+              +----------------+----------------+
+                               |
+                               v
+                    Backend / Frontend Agents
+                               |
+                               v
+                         QA Agent
+                               |
+                               v
+                      Security Agent
+                               |
+                               v
+                       DevOps Agent
+                               |
+                               v
+                  Technical Writer Agent
+                               |
+                               v
+                       Reviewer Agent
+                               |
+                               v
+                     Project Output
