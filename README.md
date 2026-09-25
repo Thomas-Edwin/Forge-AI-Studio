@@ -37,12 +37,32 @@ npm run dev
 # Web:      http://localhost:3000
 ```
 
+> **Recreating the backend venv manually?** `npm run setup` installs
+> `backend/requirements-dev.txt`, which pulls in the runtime requirements
+> **plus the dev/test toolchain** (`pytest`, `ruff`, `mypy`). If you create
+> `backend/.venv` yourself, install the dev file — not just
+> `requirements.txt` — or `npm run test` fails with "No module named pytest"
+> (and ruff/mypy are missing too):
+>
+> ```bash
+> backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt   # Windows
+> backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt           # macOS/Linux
+> ```
+
 ### Individual services
 
 ```bash
 npm run dev:api    # backend only (uvicorn --reload on :8000)
 npm run dev:web    # frontend only (next dev on :3000)
 docker compose -f docker/docker-compose.yml up -d postgres redis
+```
+
+On Windows (no POSIX shell required — plain `cmd` under the hood):
+
+```bash
+npm run dev:windows        # both servers in separate windows
+npm run dev:api:windows    # backend via backend\.venv\Scripts\python.exe
+npm run dev:web:windows    # frontend
 ```
 
 ### Health check
@@ -105,3 +125,4 @@ forgeai-studio/
 ## License
 
 Proprietary — internal use only.
+"# Forge-AI-Studio" 
