@@ -1,0 +1,34 @@
+# Vercel build context — keep the serverless bundle lean (single-project
+# deployment: vercel.json builds frontend/package.json + backend/index.py).
+# Next.js and Python dependency installation happens from each package's own
+# lock/requirements files, so node_modules, caches, and virtualenvs are never
+# needed in the uploaded source.
+
+# Frontend build artifacts and dependencies
+frontend/node_modules
+frontend/.next
+frontend/next-dev.log
+frontend/tsconfig.tsbuildinfo
+
+# Python virtualenv and caches
+backend/.venv
+backend/.pytest_cache
+backend/.ruff_cache
+.ruff_cache
+
+# Local databases (Vercel has no persistent local disk)
+*.db
+*.sqlite
+*.sqlite3
+
+# Docs and editor noise
+docs
+.git
+.idea
+.vscode
+.freebuff
+
+# Never upload env files
+.env
+.env.local
+.env.*.local
